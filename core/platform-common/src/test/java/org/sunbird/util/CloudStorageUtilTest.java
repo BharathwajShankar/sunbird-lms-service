@@ -6,16 +6,15 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.sunbird.cloud.storage.BaseStorageService;
 import org.sunbird.cloud.storage.factory.StorageServiceFactory;
+import org.sunbird.keys.JsonKey;
 import scala.Option;
 
 @RunWith(PowerMockRunner.class)
@@ -25,19 +24,16 @@ import scala.Option;
   "javax.security.*",
   "jdk.internal.reflect.*"
 })
-@PrepareForTest({StorageServiceFactory.class, CloudStorageUtil.class, PropertiesCache.class})
+@PrepareForTest({StorageServiceFactory.class, CloudStorageUtil.class})
 public class CloudStorageUtilTest {
 
   private static final String SIGNED_URL = "singedUrl";
   private static final String UPLOAD_URL = "uploadUrl";
 
+  private static final String PUT_SIGNED_URL = "gcpSignedUrl";
+
   @Before
   public void initTest() {
-    PowerMockito.mockStatic(PropertiesCache.class);
-    PropertiesCache propertiesCache = mock(PropertiesCache.class);
-    when(PropertiesCache.getInstance()).thenReturn(propertiesCache);
-    PowerMockito.when(propertiesCache.getProperty(Mockito.anyString())).thenReturn("anyString");
-
     BaseStorageService service = mock(BaseStorageService.class);
     mockStatic(StorageServiceFactory.class);
 
@@ -61,13 +57,45 @@ public class CloudStorageUtilTest {
               Mockito.any(Option.class)))
           .thenReturn(SIGNED_URL);
 
+
+      when(service.getPutSignedURL(
+              Mockito.anyString(),
+              Mockito.anyString(),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class)))
+              .thenReturn(SIGNED_URL);
+
+      when(service.getSignedURLV2(
+              Mockito.eq("azurecontainer"),
+              Mockito.anyString(),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class)))
+              .thenReturn(SIGNED_URL);
+
+      when(service.getSignedURLV2(
+              Mockito.eq("gcpcontainer"),
+              Mockito.anyString(),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class)))
+              .thenReturn(PUT_SIGNED_URL);
+
+      when(service.getSignedURLV2(
+              Mockito.eq("awscontainer"),
+              Mockito.anyString(),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class),
+              Mockito.any(Option.class)))
+              .thenReturn(SIGNED_URL);
+
     } catch (Exception e) {
       Assert.fail(e.getMessage());
     }
   }
 
   @Test
-  // @Ignore
   public void testUploadSuccess() {
     String result =
         CloudStorageUtil.upload("azure", "container", "key", "/file/path");
@@ -75,9 +103,21 @@ public class CloudStorageUtilTest {
   }
 
   @Test
-  @Ignore
-  public void testGetSignedUrlSuccess() {
-    String signedUrl = CloudStorageUtil.getSignedUrl("azure", "container", "key");
+  public void testGetSignedUrlAZURESuccess() {
+    String signedUrl = CloudStorageUtil.getSignedUrl("azure", "azurecontainer", "key");
     assertTrue(SIGNED_URL.equals(signedUrl));
   }
+
+  @Test
+  public void testGetSignedUrlGCPSuccess() {
+    String signedUrl = CloudStorageUtil.getSignedUrl(JsonKey.GCP, "gcpcontainer", "key");
+    assertTrue(PUT_SIGNED_URL.equals(signedUrl));
+  }
+
+  @Test
+  public void testGetSignedUrlAWSSuccess() {
+    String signedUrl = CloudStorageUtil.getSignedUrl(JsonKey.AWS_STR, "awscontainer", "key");
+    assertTrue(SIGNED_URL.equals(signedUrl));
+  }
+
 }

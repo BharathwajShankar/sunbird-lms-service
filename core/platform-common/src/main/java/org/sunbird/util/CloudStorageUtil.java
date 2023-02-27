@@ -30,16 +30,15 @@ public class CloudStorageUtil {
   public static String getSignedUrl(
           String storageType, String container, String objectKey) {
     IStorageService storageService = getStorageService(storageType);
-    return getSignedUrl(storageService, container, objectKey);
+    return getSignedUrl(storageService, container, objectKey,storageType);
   }
 
   public static String getSignedUrl(
       IStorageService storageService,
       String container,
-      String objectKey) {
-    int timeoutInSeconds = getTimeoutInSeconds();
-    return storageService.getSignedURL(
-        container, objectKey, Some.apply(timeoutInSeconds), Some.apply("r"));
+      String objectKey, String cloudType) {
+    return storageService.getSignedURLV2(
+        container, objectKey, Some.apply(getTimeoutInSeconds()), Some.apply("r"), Some.apply("application/pdf"));
   }
 
   private static IStorageService getStorageService(String storageType) {
